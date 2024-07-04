@@ -8,7 +8,16 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(bodyParser.json());
-app.use(cors({ origin: "*" }));
+
+const corsOptions = {
+  origin: 'https://zenscape-app.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 // Endpoint to handle recommendation requests
 app.post('/recommendations', async (req, res) => {
