@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 const corsOptions = {
   origin: 'https://zenscape-app.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
 };
 
 app.use(cors(corsOptions));
