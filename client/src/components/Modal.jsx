@@ -7,7 +7,7 @@ const Modal = ({ type, closeModal }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const navigate = useNavigate(); // Hook to programmatically navigate
+    const navigate = useNavigate();
 
     const handleEmailPasswordAuth = async () => {
         try {
