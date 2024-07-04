@@ -31,7 +31,7 @@ const Results = () => {
         if (mood && activity) {
             const fetchRecommendations = async () => {
                 try {
-                    const response = await axios.post('http://localhost:3001/recommendations', { mood, activity });
+                    const response = await axios.post('https://zenscape.vercel.app/recommendations', { mood, activity });
                     setRecommendations(response.data.recommendations);
                     setLoading(false);
                 } catch (error) {
