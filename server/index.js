@@ -8,17 +8,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(bodyParser.json());
-app.use(cors({
-    origin: 'https://zenscape-app.vercel.app',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+
+
+const corsOptions = {
+  origin: 'https://zenscape-app.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.options('/recommendations', cors({
     origin: 'https://zenscape-app.vercel.app',
     methods: ['POST'],
     allowedHeaders: ['Content-Type']
 }));
+
 
 // Endpoint to handle recommendation requests
 app.post('/recommendations', async (req, res) => {
@@ -123,6 +130,11 @@ async function getSpotifyTracks(genre) {
     }
 }
 
+
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
+module.exports = app;
