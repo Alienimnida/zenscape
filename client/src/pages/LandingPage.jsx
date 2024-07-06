@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
+import { auth } from '../firebaseConfig';
+import { signOut } from 'firebase/auth';
 
 const LandingPage = () => {
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('login');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Monitor authentication state and update the login state accordingly
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setIsLoggedIn(!!user);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const handleOpenModal = (type) => {
         setModalType(type);
@@ -12,6 +26,16 @@ const LandingPage = () => {
 
     const handleCloseModal = () => {
         setShowModal(false);
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            setIsLoggedIn(false);
+            navigate('/');
+        } catch (error) {
+            console.error('Logout failed:', error.message);
+        }
     };
 
     return (
@@ -38,20 +62,31 @@ const LandingPage = () => {
             <section id="how-it-works" className="text-center py-10 text-white">
                 <h2 className="text-4xl font-bold mb-6">How It Works</h2>
                 <p className="max-w-2xl mx-auto mb-8 text-xl">Our AI-powered engine suggests the best lofi sub-genres based on your mood and activity. Experience a personalized music journey.</p>
-                <div className="flex space-x-4 justify-center mt-6">
-                    <button
-                        onClick={() => handleOpenModal('login')}
-                        className="bg-green-500 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-green-400 transition duration-300"
-                    >
-                        Login
-                    </button>
-                    <button
-                        onClick={() => handleOpenModal('signup')}
-                        className="bg-blue-500 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-blue-400 transition duration-300"
-                    >
-                        Sign Up
-                    </button>
-                </div>
+                {isLoggedIn ? (
+                    <div className="flex space-x-4 justify-center mt-6">
+                        <button
+                            onClick={handleLogout}
+                            className="bg-red-500 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-red-400 transition duration-300"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex space-x-4 justify-center mt-6">
+                        <button
+                            onClick={() => handleOpenModal('login')}
+                            className="bg-green-500 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-green-400 transition duration-300"
+                        >
+                            Login
+                        </button>
+                        <button
+                            onClick={() => handleOpenModal('signup')}
+                            className="bg-blue-500 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-blue-400 transition duration-300"
+                        >
+                            Sign Up
+                        </button>
+                    </div>
+                )}
             </section>
             <footer className="bg-midnight-blue text-white py-6 text-center w-full">
                 <div className="max-w-screen-xl mx-auto px-4">

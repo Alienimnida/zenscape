@@ -1,25 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import '../index.css'
+import React, { useState, useEffect, useRef } from 'react';
+import '../index.css';
+
 const MusicPlaybar = ({ currentTrack, isPlaying, onPlayPause, onPrevious, onNext, onVolumeChange }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const audioRef = useRef(null); // Use useRef to keep audio element reference
 
     useEffect(() => {
-        const audio = currentTrack?.audio;
-        if (audio) {
+        if (currentTrack && currentTrack.audio) {
+            audioRef.current = currentTrack.audio;
+            const audio = audioRef.current;
+
             const updateCurrentTime = () => {
                 setCurrentTime(audio.currentTime);
                 setDuration(audio.duration);
             };
+
             audio.addEventListener('loadedmetadata', updateCurrentTime);
             audio.addEventListener('timeupdate', updateCurrentTime);
 
+            // Clean up event listeners on component unmount or track change
             return () => {
                 audio.removeEventListener('loadedmetadata', updateCurrentTime);
                 audio.removeEventListener('timeupdate', updateCurrentTime);
             };
         }
     }, [currentTrack]);
+
+    useEffect(() => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.play();
+            } else {
+                audioRef.current.pause();
+            }
+        }
+    }, [isPlaying]);
 
     const formatTime = (time) => {
         if (isNaN(time)) {
@@ -32,8 +48,20 @@ const MusicPlaybar = ({ currentTrack, isPlaying, onPlayPause, onPrevious, onNext
 
     const handleProgressChange = (e) => {
         const newTime = e.target.value;
-        if (currentTrack.audio) {
-            currentTrack.audio.currentTime = newTime;
+        if (audioRef.current) {
+            audioRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
+    const handlePlayPause = () => {
+        if (audioRef.current) {
+            if (audioRef.current.paused) {
+                audioRef.current.play();
+            } else {
+                audioRef.current.pause();
+            }
+            onPlayPause();
         }
     };
 
@@ -45,8 +73,8 @@ const MusicPlaybar = ({ currentTrack, isPlaying, onPlayPause, onPrevious, onNext
                         <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path>
                     </svg>
                 </button>
-                <button className="control-btn" onClick={onPlayPause}>
-                    {isPlaying ? (
+                <button className="control-btn" onClick={handlePlayPause}>
+                    {isPlaying && !audioRef.current?.paused ? (
                         <svg viewBox="0 0 24 24" className="control-icon">
                             <path d="M14 7h2v10h-2zM8 7h2v10H8z"></path>
                         </svg>
@@ -85,7 +113,7 @@ const MusicPlaybar = ({ currentTrack, isPlaying, onPlayPause, onPrevious, onNext
                     min={0}
                     max={1}
                     step={0.1}
-                    value={currentTrack.audio?.volume || 0}
+                    value={audioRef.current?.volume || 0}
                     onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
                     className="volume-bar"
                 />
@@ -95,4 +123,3 @@ const MusicPlaybar = ({ currentTrack, isPlaying, onPlayPause, onPrevious, onNext
 };
 
 export default MusicPlaybar;
-

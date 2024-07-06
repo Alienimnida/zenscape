@@ -168,8 +168,8 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: transparent;
-    /* Transparent background */
+    background-color: rgba(255, 255, 255, 0.8);
+    /* Whitish transparent background */
     border-top: 1px solid #333;
     /* Border at the top */
     padding: 12px;
@@ -179,6 +179,7 @@
     z-index: 1000;
     /* Ensure it's above other content */
 }
+
 
 .music-playbar-controls {
     display: flex;
@@ -247,11 +248,12 @@
 }
 
 .music-playbar-volume {
-    width: 80px;
+    display: flex;
+    align-items: center;
 }
 
 .volume-bar {
-    width: 100%;
+    flex: 1;
     appearance: none;
     height: 5px;
     background-color: #535353;
