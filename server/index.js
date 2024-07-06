@@ -11,9 +11,9 @@ app.use(bodyParser.json());
 
 
 const corsOptions = {
-  origin: 'https://zenscape-app.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
+    origin: 'https://zenscape-app.vercel.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
 };
 
 app.use(cors(corsOptions));
@@ -26,7 +26,9 @@ app.options('/recommendations', cors({
     allowedHeaders: ['Content-Type']
 }));
 
-
+app.get('/', async (req, res) => {
+    res.send("Hello world")
+})
 // Endpoint to handle recommendation requests
 app.post('/recommendations', async (req, res) => {
     const { mood, activity } = req.body;
