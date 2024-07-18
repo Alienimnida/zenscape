@@ -269,3 +269,75 @@
     background-color: #1db954;
     cursor: pointer;
 }
+
+.spotify-embed {
+    margin-top: 20px;
+    width: 100%;
+}
+
+.spotify-embed iframe {
+    width: 100%;
+}
+
+.container-3d {
+    position: relative;
+    perspective: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 50px;
+    /* Adjust based on your layout */
+}
+
+.box-3d {
+    width: 100%;
+    max-width: 350px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    z-index: 1;
+    /* Ensure it stays above the capsule image */
+}
+
+.capsule {
+    position: absolute;
+    top: -80px;
+    /* Adjust based on your layout */
+    left: -80px;
+    /* Adjust based on your layout */
+    width: 150px;
+    height: auto;
+    transform: rotate(-20deg);
+    /* Adjust based on your preference */
+    z-index: 0;
+    /* Ensure it stays below the form */
+}
+
+.bowl {
+    position: absolute;
+    bottom: -20px;
+    /* Adjust as needed to position outside */
+    right: -20px;
+    /* Adjust as needed to position outside */
+    width: 80px;
+    /* Adjust size as needed */
+    z-index: 1;
+}
+
+.fade-in {
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

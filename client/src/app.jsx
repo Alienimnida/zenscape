@@ -18,10 +18,6 @@ const App = () => {
     return (
         <BrowserRouter>
             <div>
-                <nav>
-                    <button onClick={() => openModal('login')}>Login</button>
-                    <button onClick={() => openModal('signup')}>Sign Up</button>
-                </nav>
                 {modalType && <Modal type={modalType} closeModal={closeModal} />}
                 <Routes>
                     <Route path={"/"} element={<LandingPage />} />
