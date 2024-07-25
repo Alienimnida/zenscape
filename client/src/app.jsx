@@ -42,7 +42,7 @@ const App = () => {
     ]);
 
     return (
-        <BrowserRouter>
+        // <BrowserRouter>
             <div>
                 {modalType && <Modal type={modalType} closeModal={closeModal} />}
 {/*                 <Routes>
@@ -53,7 +53,7 @@ const App = () => {
                 </Routes> */}
                 <RouterProvider router={router} />
             </div>
-        </BrowserRouter>
+        // </BrowserRouter>
     );
 
 }
