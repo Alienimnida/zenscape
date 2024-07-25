@@ -9,21 +9,9 @@ import {
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <LandingPage />,
+    path: "/*",
+    element: <App />,
   },
-  {
-    path: "/music",
-    element: <Home />,
-  },
-  {
-    path: "/results",
-    element: <Results />,
-  },
-  {
-    path: "/callback",
-    element: <SpotifyCallback />
-  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
