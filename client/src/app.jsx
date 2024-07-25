@@ -22,24 +22,7 @@ const App = () => {
     };
 
 
-    const router = createBrowserRouter([
-      {
-        path: "/",
-        element: <LandingPage />,
-      },
-      {
-        path: "/music",
-        element: <Home />,
-      },
-      {
-        path: "/results",
-        element: <Results />,
-      },
-      {
-        path: "/callback",
-        element: <SpotifyCallback />
-      }
-    ]);
+    
 
     return (
         // <BrowserRouter>
