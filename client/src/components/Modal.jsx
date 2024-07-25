@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider } from '../firebaseConfig';
-import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 
 const Modal = ({ type, closeModal }) => {
     const [email, setEmail] = useState('');
@@ -31,6 +31,14 @@ const Modal = ({ type, closeModal }) => {
         } catch (err) {
             setError(err.message);
         }
+    };
+
+    const initiateSpotifyLogin = () => {
+        const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+        const redirectUri = encodeURIComponent('https://zenscape-app.vercel.app/callback');
+        const scopes = encodeURIComponent('user-read-private user-read-email playlist-modify-private playlist-modify-public');
+        const spotifyAuthUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scopes}`;
+        window.location.href = spotifyAuthUrl;
     };
 
     useEffect(() => {
@@ -78,9 +86,15 @@ const Modal = ({ type, closeModal }) => {
                 </button>
                 <button
                     onClick={handleGoogleAuth}
-                    className="bg-red-500 text-white w-full py-2 rounded"
+                    className="bg-red-500 text-white w-full py-2 mb-4 rounded"
                 >
                     {type === 'login' ? 'Login' : 'Sign Up'} with Google
+                </button>
+                <button
+                    onClick={initiateSpotifyLogin}
+                    className="bg-green-500 text-white w-full py-2 rounded"
+                >
+                    {type === 'login' ? 'Login' : 'Sign Up'} with Spotify
                 </button>
                 {error && <p className="text-red-500 mt-4">{error}</p>}
             </div>

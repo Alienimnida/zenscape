@@ -11,12 +11,24 @@ const LandingPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Monitor authentication state and update the login state accordingly
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            setIsLoggedIn(!!user);
+        const checkLoginStatus = () => {
+            const firebaseUser = auth.currentUser;
+            const spotifyToken = localStorage.getItem('spotifyAccessToken');
+            setIsLoggedIn(!!(firebaseUser || spotifyToken));
+        };
+
+        const unsubscribe = auth.onAuthStateChanged(() => {
+            checkLoginStatus();
         });
 
-        return () => unsubscribe();
+        window.addEventListener('storage', checkLoginStatus);
+
+        checkLoginStatus(); // Initial check
+
+        return () => {
+            unsubscribe();
+            window.removeEventListener('storage', checkLoginStatus);
+        };
     }, []);
 
     const handleOpenModal = (type) => {
@@ -36,9 +48,17 @@ const LandingPage = () => {
         }
     };
 
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+    };
+
     return (
         <div className="min-h-screen flex flex-col bg-midnight-blue">
-            <Nav isLoggedIn={isLoggedIn} handleOpenModal={handleOpenModal} />
+            <Nav
+                isLoggedIn={isLoggedIn}
+                handleOpenModal={handleOpenModal}
+                handleLogout={handleLogout}
+            />
             <header className="text-center py-10 flex-grow flex flex-col justify-center items-center px-4 md:px-0">
                 <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4">Welcome to Zenscape</h1>
                 <p className="text-base sm:text-lg md:text-2xl text-purple-200 mb-6">Discover your perfect lofi soundtrack.</p>
@@ -46,7 +66,7 @@ const LandingPage = () => {
                     onClick={handleGetStarted}
                     className="bg-cyan-400 text-white px-6 py-3 md:px-8 md:py-4 rounded-full text-lg font-semibold hover:bg-cyan-300 transition duration-300"
                 >
-                    Get Started
+                    {isLoggedIn ? 'Go to Music' : 'Get Started'}
                 </button>
             </header>
             <section id="features" className="flex flex-col items-center py-10 px-4 text-center text-white">
@@ -67,7 +87,10 @@ const LandingPage = () => {
             </section>
             <section id="how-it-works" className="text-center py-10 text-white px-4 md:px-0">
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">How It Works</h2>
-                <p className="max-w-2xl mx-auto mb-8 text-base sm:text-lg md:text-xl">Our AI-powered engine suggests the best lofi sub-genres based on your mood and activity. Experience a personalized music journey.</p>
+                <p className="max-w-2xl mx-auto mb-8 text-base sm:text-lg md:text-xl">
+                    Our AI-powered engine suggests the best lofi sub-genres based on your mood and activity.
+                    Experience a personalized music journey.
+                </p>
             </section>
             <footer className="bg-midnight-blue text-white py-6 text-center w-full px-4 md:px-0">
                 <div className="max-w-screen-xl mx-auto">
@@ -78,6 +101,5 @@ const LandingPage = () => {
         </div>
     );
 };
-
 
 export default LandingPage;

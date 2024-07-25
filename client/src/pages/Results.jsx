@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import '../index.css';
 
 const Results = () => {
     const { state } = useLocation();
+    const navigate = useNavigate();
     const { mood, activity } = state || {};
     const [recommendations, setRecommendations] = useState([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -15,6 +16,10 @@ const Results = () => {
     const [showRecommendations, setShowRecommendations] = useState(false);
     const [userId, setUserId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [spotifyAuthenticated, setSpotifyAuthenticated] = useState(false);
+    const [error, setError] = useState(null);
+    const [authStatus, setAuthStatus] = useState('checking');
+    const [authMethod, setAuthMethod] = useState(null); // 'spotify' or 'firebase'
 
     const gifList = [
         'https://www.gifcen.com/wp-content/uploads/2022/06/lofi-gif-2.gif',
@@ -33,39 +38,60 @@ const Results = () => {
         'https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzU1Mjc5NmV2YXQxZ3o0bnozdnd2Z2k2eHZ5eGlyY3B5c3VubnRybiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/V0Xds46wsXco73KJsY/giphy.gif'
     ];
 
-    useEffect
-        (() => {
+    useEffect(() => {
+        const checkAuth = async () => {
+            // First, check for Spotify token
+            const spotifyToken = localStorage.getItem('spotifyAccessToken');
+            if (spotifyToken) {
+                setSpotifyAuthenticated(true);
+                setUserId(spotifyToken);
+                setAuthStatus('authenticated');
+                setAuthMethod('spotify');
+                return;
+            }
+
+            // If no Spotify token, check Firebase auth
             const auth = getAuth();
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
+            onAuthStateChanged(auth, (user) => {
                 if (user) {
                     setUserId(user.uid);
+                    setAuthStatus('authenticated');
+                    setAuthMethod('firebase');
                 } else {
                     setUserId(null);
+                    setAuthStatus('unauthenticated');
+                    setAuthMethod(null);
                 }
             });
+        };
 
-            return () => unsubscribe();
-        }, []);
+        checkAuth();
+    }, []);
 
-    useEffect
-        (() => {
-            if (mood && activity && userId) {
-                const fetchRecommendations = async () => {
-                    try {
-                        setIsLoading(true);
-                        const response = await axios.post('https://zenscape.vercel.app/recommendations', { userId, mood, activity });
-                        setRecommendations(response.data.recommendations);
-                        setLoading(false);
-                        setIsLoading(false);
-                    } catch (error) {
-                        console.error('Error fetching recommendations:', error.message);
-                        setLoading(false);
-                        setIsLoading(false);
-                    }
-                };
-                fetchRecommendations();
-            }
-        }, [mood, activity, userId]);
+    useEffect(() => {
+        if (authStatus === 'authenticated' && mood && activity && userId) {
+            const fetchRecommendations = async () => {
+                try {
+                    setIsLoading(true);
+                    const response = await axios.post('https://zenscape.vercel.app/recommendations', {
+                        userId,
+                        mood,
+                        activity,
+                        isAuthenticated: true
+                    });
+                    setRecommendations(response.data.recommendations);
+                    setLoading(false);
+                    setIsLoading(false);
+                } catch (error) {
+                    console.error('Error fetching recommendations:', error.message);
+                    setError(error.response?.data?.error || 'An error occurred while fetching recommendations');
+                    setLoading(false);
+                    setIsLoading(false);
+                }
+            };
+            fetchRecommendations();
+        }
+    }, [mood, activity, userId, authStatus]);
 
     useEffect(() => {
         if (recommendations.length > 0) {
@@ -80,7 +106,7 @@ const Results = () => {
 
         if (userId) {
             try {
-                await axios.post('http://localhost:3001/play-song', {
+                await axios.post('https://zenscape.vercel.app/play-song', {
                     userId,
                     trackId: `track-${track.uri}`
                 });
@@ -94,8 +120,61 @@ const Results = () => {
         setShowRecommendations(!showRecommendations);
     };
 
-    if (!userId) {
-        return <div>Please log in to see recommendations</div>;
+    const savePlaylistToSpotify = async () => {
+        if (!spotifyAuthenticated) {
+            alert("Please login with Spotify to save the playlist.");
+            return;
+        }
+
+        try {
+            const response = await axios.post('https://zenscape.vercel.app/save-playlist', {
+                accessToken: localStorage.getItem('spotifyAccessToken'),
+                tracks: recommendations,
+                mood,
+                activity
+            }, { withCredentials: true });
+
+            if (response.data.success) {
+                alert("Playlist saved successfully!");
+            } else {
+                alert(response.data.error || "Failed to save playlist. Please try again.");
+            }
+        } catch (error) {
+            console.error('Error saving playlist:', error);
+            if (error.response && error.response.status === 401) {
+                alert("Your Spotify session has expired. Please log in again.");
+                setSpotifyAuthenticated(false);
+                localStorage.removeItem('spotifyAccessToken');
+                setAuthMethod(null);
+            } else {
+                alert(error.response?.data?.error || "An error occurred while saving the playlist.");
+            }
+        }
+    };
+
+    if (authStatus === 'checking') {
+        return <div className="text-white">Checking authentication...</div>;
+    }
+
+    if (authStatus === 'unauthenticated') {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-900">
+                <div className="text-white text-center p-8 bg-gray-800 rounded-lg shadow-lg">
+                    <h2 className="text-2xl font-semibold mb-4">Please log in to get recommendations</h2>
+                    <button
+                        className="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                        onClick={() => navigate('/')}
+                    >
+                        Log In
+                    </button>
+                </div>
+            </div>
+
+        );
+    }
+
+    if (error) {
+        return <div className="text-white">{error}</div>;
     }
 
     if (isLoading) {
@@ -109,7 +188,6 @@ const Results = () => {
             </div>
         );
     }
-
 
     return (
         <div
@@ -143,8 +221,15 @@ const Results = () => {
                                 </li>
                             ))}
                         </ul>
+                        {authMethod === 'spotify' && (
+                            <button
+                                onClick={savePlaylistToSpotify}
+                                className="fixed bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md z-50 transition-colors duration-300"
+                            >
+                                Save to Spotify
+                            </button>
+                        )}
                     </div>
-
                 )}
             </div>
             {currentTrack && (

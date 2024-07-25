@@ -4,7 +4,9 @@ const axios = require('axios');
 const cors = require('cors');
 const recombee = require('recombee-api-client');
 const rqs = recombee.requests;
+const SpotifyWebApi = require('spotify-web-api-node');
 const NodeCache = require('node-cache');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -13,21 +15,28 @@ const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
 app.use(bodyParser.json());
 const corsOptions = {
     origin: 'https://zenscape-app.vercel.app',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
+    credentials: true,
+    optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-app.options('/recommendations', cors({
+const endpointCorsOptions = cors({
     origin: 'https://zenscape-app.vercel.app',
     methods: ['POST'],
-    allowedHeaders: ['Content-Type']
-}));
+    allowedHeaders: ['Content-Type'],
+    credentials: true
+});
+app.options('/recommendations', endpointCorsOptions);
+app.options('/play-song', endpointCorsOptions);
+app.options('/save-playlist', endpointCorsOptions);
 
 // Recombee setup
 const client = new recombee.ApiClient(process.env.RECOMBEE_DATABASE_ID, process.env.RECOMBEE_PRIVATE_TOKEN);
+
+function hashUserId(userId) {
+    return crypto.createHash('md5').update(userId).digest('hex');
+}
 
 app.get('/', async (req, res) => {
     res.send("Hello world");
@@ -35,7 +44,11 @@ app.get('/', async (req, res) => {
 
 // Endpoint to handle recommendation requests
 app.post('/recommendations', async (req, res) => {
-    const { userId, mood, activity } = req.body;
+    const { userId, mood, activity, isAuthenticated } = req.body;
+
+    if (!isAuthenticated) {
+        return res.status(401).json({ error: 'Please login to get recommendations' });
+    }
 
     try {
         const recombeeRecommendations = await getRecommendationsFromRecombee(userId, mood, activity);
@@ -64,10 +77,11 @@ app.post('/recommendations', async (req, res) => {
 // Endpoint to keep track of play count
 app.post('/play-song', async (req, res) => {
     const { userId, trackId } = req.body;
+    const hashedUserId = hashUserId(userId);
 
     try {
         // Add detail view
-        await client.send(new rqs.AddDetailView(userId, trackId, {
+        await client.send(new rqs.AddDetailView(hashedUserId, trackId, {
             'cascadeCreate': true,
             'timestamp': new Date().toISOString(),
         }));
@@ -90,6 +104,47 @@ app.post('/play-song', async (req, res) => {
     } catch (error) {
         console.error('Error recording play:', error);
         res.status(500).json({ error: 'Error recording play' });
+    }
+});
+
+// New endpoint to save playlist to Spotify                     
+app.post('/save-playlist', async (req, res) => {
+    try {
+        const { accessToken, tracks, mood, activity } = req.body;
+
+        if (!accessToken || !tracks || !mood || !activity) {
+            return res.status(400).json({ error: 'Missing required parameters' });
+        }
+
+        const spotifyApi = new SpotifyWebApi({
+            accessToken: accessToken
+        });
+
+        // Create a new playlist
+        const playlistName = `${mood} ${activity} - Zenscape`;
+        const playlistDescription = `A playlist for ${mood} ${activity} created by Zenscape`;
+
+        let playlist;
+        try {
+            playlist = await spotifyApi.createPlaylist(playlistName, { 'description': playlistDescription, 'public': true });
+        } catch (error) {
+            console.error('Error creating playlist:', error);
+            return res.status(500).json({ error: 'Failed to create playlist' });
+        }
+
+        // Add tracks to the playlist
+        const trackUris = tracks.map(track => track.uri);
+        try {
+            await spotifyApi.addTracksToPlaylist(playlist.body.id, trackUris);
+        } catch (error) {
+            console.error('Error adding tracks to playlist:', error);
+            return res.status(500).json({ error: 'Failed to add tracks to playlist' });
+        }
+
+        res.json({ success: true, playlistId: playlist.body.id });
+    } catch (error) {
+        console.error('Error saving playlist:', error);
+        res.status(500).json({ error: 'An error occurred while saving the playlist' });
     }
 });
 
@@ -244,8 +299,9 @@ updateNullPlayCounts();
 // Function to get recommendations from Recombee
 async function getRecommendationsFromRecombee(userId, mood, activity) {
     try {
+        const hashedUserId = hashUserId(userId);
         const response = await client.send(new rqs.RecommendItemsToUser(
-            userId,
+            hashedUserId,
             30,
             {
                 'returnProperties': true,
@@ -262,6 +318,7 @@ async function getRecommendationsFromRecombee(userId, mood, activity) {
 
 // Function to store recommendations in Recombee
 async function storeRecommendationsInRecombee(mood, activity, tracks, userId) {
+    const hashedUserId = hashUserId(userId);
     const setItemValuesRequests = tracks.map(track => {
         const trackId = `track-${track.uri}`;
         return new rqs.SetItemValues(trackId, {
