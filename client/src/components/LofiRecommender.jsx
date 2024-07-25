@@ -40,7 +40,7 @@ const LofiRecommender = () => {
       onMouseLeave={handleMouseLeave}
     >
       <div className="container-3d">
-        <img className="capsule" src="./../assets/capsule.png" alt="Capsule" />
+        <img className="capsule" src="/capsule.png" alt="Capsule" />
         <div className="box-3d">
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Lofi Music Recommender</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,7 +80,7 @@ const LofiRecommender = () => {
           </form>
         </div>
         <div className="bowl">
-          <img className="bowl" src="../src/assets/Bowl.png" alt="Bowl" />
+          <img className="bowl" src="/Bowl.png" alt="Bowl" />
         </div>
       </div>
     </div>
