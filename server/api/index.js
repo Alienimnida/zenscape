@@ -58,14 +58,18 @@ app.post('/recommendations', async (req, res) => {
         } else {
             const genre = await getRecommendations(mood, activity);
             let tracks;
+            let usedFallback = false;
             try {
                 tracks = await getSpotifyTracks(genre);
             } catch (spotifyError) {
                 console.error('Spotify API error:', spotifyError);
                 tracks = await getFallbackTracks();
+                usedFallback = true;
             }
 
-            await storeRecommendationsInRecombee(mood, activity, tracks, userId);
+            if (!usedFallback) {
+                await storeRecommendationsInRecombee(mood, activity, tracks, userId);
+            }
             res.json({ recommendations: tracks });
         }
     } catch (error) {
@@ -171,7 +175,7 @@ Here are the user's details:
 Mood: ${mood}
 Activity: ${activity}
 
-Please recommend the best lofi sub-genre and respond with the corresponding Spotify API genre name.
+Please recommend the best lofi sub-genre and respond ONLY with the corresponding Spotify API genre name.
 `;
 
     try {
@@ -199,12 +203,16 @@ Please recommend the best lofi sub-genre and respond with the corresponding Spot
 async function getRecommendations(mood, activity) {
     try {
         const genre = await getAI21Recommendations(mood, activity);
-        return genre;
+        // Extract only the genre name from the AI21 response
+        const extractedGenre = genre.split(' ').pop().toLowerCase().replace(/[^a-z-]/g, '');
+        console.log('Extracted genre:', extractedGenre);
+        return extractedGenre;
     } catch (error) {
         console.error('Error getting AI21 recommendations:', error);
         return getFallbackGenre(mood, activity);
     }
 }
+
 
 function getFallbackGenre(mood, activity) {
     if (mood === 'relaxed' && activity === 'studying') {
@@ -226,6 +234,8 @@ async function getSpotifyTracks(genre, retries = 3) {
     const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
     try {
+        console.log(`Attempting to fetch tracks for genre: ${genre}`);
+
         // Get Spotify access token
         const authResponse = await axios.post('https://accounts.spotify.com/api/token', 'grant_type=client_credentials', {
             headers: {
@@ -235,17 +245,20 @@ async function getSpotifyTracks(genre, retries = 3) {
         });
 
         const accessToken = authResponse.data.access_token;
+        console.log('Successfully obtained Spotify access token');
 
         const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             },
             params: {
-                q: genre,
+                q: `genre:"${genre}"`,
                 type: 'track',
                 limit: 30
             }
         });
+
+        console.log(`Successfully fetched ${searchResponse.data.tracks.items.length} tracks from Spotify`);
 
         const tracks = searchResponse.data.tracks.items.map(track => ({
             name: track.name,
@@ -260,11 +273,15 @@ async function getSpotifyTracks(genre, retries = 3) {
         cache.set(cacheKey, tracks);
         return tracks;
     } catch (error) {
+        console.error('Detailed error:', error.response?.data || error.message);
+        console.error('Error config:', error.config);
+
         if (retries > 0) {
             console.log(`Retrying Spotify request. Attempts left: ${retries - 1}`);
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
             return getSpotifyTracks(genre, retries - 1);
         }
+
         console.error('Error fetching tracks from Spotify:', error.response?.data || error.message);
         throw new Error('Error fetching tracks from Spotify');
     }
