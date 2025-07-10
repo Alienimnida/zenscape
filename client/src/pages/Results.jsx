@@ -73,7 +73,7 @@ const Results = () => {
             const fetchRecommendations = async () => {
                 try {
                     setIsLoading(true);
-                    const response = await axios.post('https://zenscape.vercel.app/recommendations', {
+                    const response = await axios.post('https://zenscape-ny9g.vercel.app/recommendations', {
                         userId,
                         mood,
                         activity,
@@ -106,7 +106,7 @@ const Results = () => {
 
         if (userId) {
             try {
-                await axios.post('https://zenscape.vercel.app/play-song', {
+                await axios.post('https://zenscape-ny9g.vercel.app/play-song', {
                     userId,
                     trackId: `track-${track.uri}`
                 });
@@ -127,7 +127,7 @@ const Results = () => {
         }
 
         try {
-            const response = await axios.post('https://zenscape.vercel.app/save-playlist', {
+            const response = await axios.post('https://zenscape-ny9g.vercel.app/save-playlist', {
                 accessToken: localStorage.getItem('spotifyAccessToken'),
                 tracks: recommendations,
                 mood,

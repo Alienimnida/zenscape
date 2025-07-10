@@ -35,7 +35,7 @@ const Modal = ({ type, closeModal }) => {
 
     const initiateSpotifyLogin = () => {
         const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-        const redirectUri = encodeURIComponent('https://zenscape-app.vercel.app/callback');
+        const redirectUri = encodeURIComponent('https://zenscape-ny9g.vercel.app//callback');
         const scopes = encodeURIComponent('user-read-private user-read-email playlist-modify-private playlist-modify-public');
         const spotifyAuthUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scopes}`;
         window.location.href = spotifyAuthUrl;
