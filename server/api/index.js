@@ -39,7 +39,7 @@ function hashUserId(userId) {
 }
 
 app.get('/', async (req, res) => {
-    res.send("Hello world");
+    res.send("Hello world!!!");
 });
 
 // Endpoint to handle recommendation requests
