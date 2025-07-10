@@ -14,7 +14,7 @@ const PORT = 3001;
 const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
 app.use(bodyParser.json());
 const corsOptions = {
-    origin: 'https://zenscape-app.vercel.app',
+    origin: ['https://zenscape-khaki.vercel.app', 'https://zenscape-app.vercel.app'],
     credentials: true,
     optionsSuccessStatus: 200
 };
@@ -22,7 +22,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 const endpointCorsOptions = cors({
-    origin: 'https://zenscape-app.vercel.app',
+    origin: ['https://zenscape-khaki.vercel.app', 'https://zenscape-app.vercel.app'],
     methods: ['POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true
