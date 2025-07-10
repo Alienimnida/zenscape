@@ -14,7 +14,7 @@ const PORT = 3001;
 const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
 app.use(bodyParser.json());
 const corsOptions = {
-    origin: ['https://zenscape-khaki.vercel.app', 'https://zenscape-app.vercel.app'],
+    origin: ['http://localhost:5173', 'https://zenscape-khaki.vercel.app', 'https://zenscape-app.vercel.app'],
     credentials: true,
     optionsSuccessStatus: 200
 };
@@ -22,7 +22,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 const endpointCorsOptions = cors({
-    origin: ['https://zenscape-khaki.vercel.app', 'https://zenscape-app.vercel.app'],
+    origin: ['http://localhost:5173', 'https://zenscape-khaki.vercel.app', 'https://zenscape-app.vercel.app'],
     methods: ['POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true
@@ -155,35 +155,39 @@ app.post('/save-playlist', async (req, res) => {
 // Function to get recommendations using AI21 API
 async function getAI21Recommendations(mood, activity) {
     const AI21_API_KEY = process.env.AI21_API_KEY;
-    const url = 'https://api.ai21.com/studio/v1/j2-ultra/complete';
+    const url = 'https://api.ai21.com/studio/v1/chat/completions';
 
     const prompt = `
 You are an AI music assistant specializing in recommending lofi sub-genres based on a user's mood and activity. Here are the lofi sub-genres and their corresponding names in the Spotify API:
 
-Lofi Hip-Hop - lo-fi beats
-Chillhop - chillhop
-Lofi Jazz - lo-fi jazz
-Lofi House - lo-fi house
-Lofi R&B - lo-fi r&b
-Lofi Ambient - lo-fi ambient
-Lofi Electronica - lo-fi electronic
-Lofi Funk - lo-fi funk
-Lofi Rock - lo-fi rock
+Lofi Hip-Hop - lo-fi beats  
+Chillhop - chillhop  
+Lofi Jazz - lo-fi jazz  
+Lofi House - lo-fi house  
+Lofi R&B - lo-fi r&b  
+Lofi Ambient - lo-fi ambient  
+Lofi Electronica - lo-fi electronic  
+Lofi Funk - lo-fi funk  
+Lofi Rock - lo-fi rock  
+
 Consider both the user's mood and activity equally when recommending the most suitable lofi sub-genre. Ensure the recommendations are diverse and avoid repeatedly suggesting the same sub-genre.
 
-Here are the user's details:
-Mood: ${mood}
-Activity: ${activity}
+Here are the user's details:  
+Mood: ${mood}  
+Activity: ${activity}  
 
 Please recommend the best lofi sub-genre and respond ONLY with the corresponding Spotify API genre name.
 `;
 
     try {
         const response = await axios.post(url, {
-            prompt,
-            maxTokens: 50,
+            model: "jamba-large",
+            max_tokens: 50,
             temperature: 0.7,
-            stopSequences: ["\n"]
+            messages: [
+                { role: "system", content: "You are a helpful assistant." },
+                { role: "user", content: prompt }
+            ]
         }, {
             headers: {
                 'Authorization': `Bearer ${AI21_API_KEY}`,
@@ -191,7 +195,7 @@ Please recommend the best lofi sub-genre and respond ONLY with the corresponding
             }
         });
 
-        const genre = response.data.completions[0].data.text.trim();
+        const genre = response.data.choices[0].message.content.trim();
         console.log('AI21 Recommended Genre:', genre);
         return genre;
     } catch (error) {
@@ -199,6 +203,8 @@ Please recommend the best lofi sub-genre and respond ONLY with the corresponding
         throw new Error('Error fetching recommendations from AI21 API');
     }
 }
+
+
 
 async function getRecommendations(mood, activity) {
     try {
